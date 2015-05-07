@@ -24,7 +24,7 @@ y_oracle  = YOracle(util)
 y_querier = YQuerier(pool)
 y_learner = YLearner(pool)
 
-transition = Transition(pool, x_querier, x_learner, y_querier, y_learner)
+pool.transition = Transition(pool, x_querier, x_learner, y_querier, y_learner)
 
 # initialize
 x_seeds = x_oracle.get_seeds()
@@ -40,7 +40,7 @@ print 'INITIAL y_data', len(pool.y_data)
 print 'INITIAL y_hist', len(pool.y_hist)
 print 'INITIAL y_pred', len(pool.y_pred)
 
-next_state = transition.go()
+next_state = pool.transition.go()
 
 while True:
 	print 'current_state =', next_state
@@ -66,6 +66,9 @@ while True:
 	else:
 		exit('Error: Illegal next_state: "{}".'.format(next_state))
 
-	transition.save_model()
-	next_state = transition.go()
+	if len(pool.y_data) > 300: # stop criteria
+		break
+
+	pool.transition.save_model()
+	next_state = pool.transition.go()
 

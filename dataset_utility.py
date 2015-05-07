@@ -22,16 +22,19 @@ class DataSetUtility(object):
 		self.term_idf_path = '/storage6/foreseer/users/raywang/large_learn_data/rcv1-v2/text/stem.termid.idf.map.txt'
 		self.default_search_params = {'index':self.index_path, 'out':'docID;text'}
 
+		# x,y data
+		self.train_data_path = '/storage6/foreseer/users/raywang/pool/al/train.dat'
+
 		# y-data
 		# self.label_path = '/storage6/foreseer/users/raywang/large_learn_data/rcv1-v2/label/industries/rcv1-v2.label'
 		self.label_path = '/storage6/foreseer/users/raywang/large_learn_data/rcv1-v2/label/topics/rcv1-v2.label'
 
 		# task specific
 		self.positive_labels = {'G151':1}
-		self.work_dir = '/storage6/foreseer/users/raywang/pool/dl/G151'
-		self.x_seed_path = '/storage6/foreseer/users/raywang/pool/dl/G151/x_seed.txt'
-		self.id_set_path = '/storage6/foreseer/users/raywang/pool/dl/G151/train.id'
-		# self.id_set_path = '/storage6/foreseer/users/raywang/pool/dl/G151/test.id'
+		self.work_dir = '/storage6/foreseer/users/raywang/pool/dl/dat/G151'
+		self.x_seed_path = '/storage6/foreseer/users/raywang/pool/dl/dat/G151/x_seed.txt'
+		self.id_set_path = '/storage6/foreseer/users/raywang/pool/dl/dat/G151/train.id'
+		# self.id_set_path = '/storage6/foreseer/users/raywang/pool/dl/dat/G151/test.id'
 
 		# load term map: id should be integers starting from 1
 		self.term2id = {}
@@ -197,6 +200,19 @@ class DataSetUtility(object):
 			svm_f.write('\n')
 		id_f.close()
 		svm_f.close()
+
+	# input: y_data['doc_id'] = label
+	#		 datapath: train_path
+	# output: line format = 'label' 'data_str'
+	def prepare_svm_data(self, y_data, output_path):
+		in_f = open(self.train_data_path)
+		ou_f = open(output_path, 'w')
+		for line in in_f:
+			doc_id, data_str = line.strip().split('\t')
+			if doc_id in y_data:
+				ou_f.write('{} {}\n'.format(y_data[doc_id], data_str))
+		in_f.close()
+		ou_f.close()
 
 	# compute metrics
 	def compute_metrics(self, y_pred):

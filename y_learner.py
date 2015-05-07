@@ -1,45 +1,55 @@
-import liblinearutil as linsvm
 import sys
 from copy import deepcopy
 from scipy.stats import spearmanr
 import subprocess
+import os
+
+import Transition
 
 # input: x_data: feature vectors
 # 		 y_data: labels, e.g. labeled examples
 # output: a model
-def svm_learn(x_data, y_data):
-	x_labeled = []
-	y = []
-	for doc_id in y_data:
-		if doc_id in x_data:
-			x_labeled.append(x_data[doc_id])
-			y.append(y_data[doc_id])
-	if len(x_labeled) > 0: # train model if there are labeled data
-		prob = linsvm.problem(y, x_labeled)
-		param = linsvm.parameter('-c 1 -B 1 -q -s 6')
-		m = linsvm.train(prob, param)
-		return m
-	else:
-		return None
+def svm_learn(data_path, model_path):
+	params_arr = ['/storage3/users/raywang/kiva/classifier/libsvm/liblinear-1.92/train', \
+				  '-s', '6', '-c', '1', '-B', '1', '-q', \
+				  data_path, \
+				  model_path]
+	subprocess.call(params_arr)
+
+# def svm_learn(x_data, y_data):
+# 	x_labeled = []
+# 	y = []
+# 	for doc_id in y_data:
+# 		if doc_id in x_data:
+# 			x_labeled.append(x_data[doc_id])
+# 			y.append(y_data[doc_id])
+# 	if len(x_labeled) > 0: # train model if there are labeled data
+# 		prob = linsvm.problem(y, x_labeled)
+# 		param = linsvm.parameter('-c 1 -B 1 -q -s 6')
+# 		m = linsvm.train(prob, param)
+# 		return m
+# 	else:
+# 		return None
+		
 # input: x_data: feature vectors
 # output: y_predict: the predictions on x_data
-def svm_predict(x_data, model):
-	if model == None:
-		return {}
+# def svm_predict(x_data, model):
+# 	if model == None:
+# 		return {}
 
-	x = []
-	x_id = []
-	for doc_id in x_data:
-		x.append(x_data[doc_id])
-		x_id.append(doc_id)
-	p_label, p_acc, p_val = linsvm.predict([], x, model, '-b 0 -q')
+# 	x = []
+# 	x_id = []
+# 	for doc_id in x_data:
+# 		x.append(x_data[doc_id])
+# 		x_id.append(doc_id)
+# 	p_label, p_acc, p_val = linsvm.predict([], x, model, '-b 0 -q')
 	
-	y_pred = {}
-	for i in xrange(len(x_id)):
-		y_pred[ x_id[i] ] = p_val[i][0]
-	return y_pred
+# 	y_pred = {}
+# 	for i in xrange(len(x_id)):
+# 		y_pred[ x_id[i] ] = p_val[i][0]
+# 	return y_pred
 
-def svm_predict_file(data_path, id_path, work_dir, model):
+def svm_predict(data_path, model_path, pred_path, id_path):
 	if model == None:
 		return {}
 	model_path = work_dir + '/t.model'
@@ -68,19 +78,28 @@ class YLearner(object):
 	def __init__(self, pool):
 		self.pool = pool
 
-		# memory of the past
-		self.y_last_pred = None
-		self.until_yqid = None
-		self.model = None
+		# memory of model
+		self.current_model_path = None
 
 	def update_belief(self):
-		# train model
-		if self.has_new_y_data():
-			self.model = svm_learn(self.pool.x_data, self.pool.y_data)
-			self.until_yqid = max(self.pool.y_hist.values()) # update the yqid used in training so far
-		
-		y_pred = svm_predict(self.pool.x_data, self.model)
-		self.y_last_pred = deepcopy(self.pool.y_pred)
+		if self.pool.trainsition.step_hist[-1] == Transition.STATE_Y_QUERY: # has new label, train model
+			model_dir = os.path.join(self.pool.dataset_util.work_dir, 'model_{}_{}'.format(self.x_querier.xqid, self.y_querier.yqid))
+			if not os.path.exists(model_dir):
+				os.makedirs(model_dir)
+			
+			model_path = os.path.join(model_dir, 'model')
+			train_path = os.path.join(model_dir, 'train.svm')
+			pred_path  = os.path.join(model_dir, 'train.prd')
+			self.pool.dataset_util.prepare_svm_train_data(self.pool.y_data, train_path)
+			svm_learn(train_path, model_path)
+			self.current_model_path = model_path
+
+		# predict: whether we have a new model or not
+		test_path = os.path.join(model_dir, 'test.svm')
+		test_id_path = os.path.join(model_dir, 'test.id')
+		pred_path = os.path.join(model_dir, 'test.prd')
+		self.pool.dataset_util.prepare_svm_test_data(self.pool.x_data, test_id_path, test_path)
+		y_pred = svm_predict(test_path, self.current_model_path, pred_path, test_id_path)
 		self.pool.y_pred.update(y_pred) # update pool.y_pred
 
 		# sys.stderr.write('YLearner, update_belief(): y_pred_score = {}\n'.format(self.pool.y_pred))

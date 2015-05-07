@@ -12,6 +12,8 @@ class Pool (object):
 		self.y_pred = {} # label guess
 		self.y_hist = {} # y_hist[doc_id] = y_query_id
 
+		self.trainsition = None
+
 	def add_x(self, x_query_answered):
 		for qid in x_query_answered:
 			for doc_id, x in x_query_answered[qid].items():

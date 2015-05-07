@@ -70,11 +70,14 @@ class Transition(object):
 				return self.record_state(STATE_Y_QUERY)
 
 		elif current_step == STATE_X_UPDATE:
-			if not self.y_learner.has_new_predicted_pos_data():
-			# if not self.y_learner.has_new_labeled_pos_data():
-				return self.record_state(STATE_DONE)
-			else:
-				return self.record_state(STATE_Y_UPDATE)
+			
+			# if not self.y_learner.has_new_predicted_pos_data():
+			# # if not self.y_learner.has_new_labeled_pos_data():
+			# 	return self.record_state(STATE_DONE)
+			# else:
+			# 	return self.record_state(STATE_Y_UPDATE)
+
+			return self.record_state(STATE_Y_UPDATE)
 
 	def save_model(self):
 		model_dir = os.path.join(self.pool.dataset_util.work_dir, 'model_{}_{}'.format(self.x_querier.xqid, self.y_querier.yqid))
