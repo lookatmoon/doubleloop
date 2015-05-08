@@ -55,11 +55,12 @@ if __name__ == '__main__':
 	'''
 
 	########################################################################
-	if len(sys.argv) != 3:
-		exit ('Params: model_dir json_name')
+	if len(sys.argv) != 4:
+		exit ('Params: model_dir json_name data_id_path')
 
 	model_dir = sys.argv[1]
 	json_name = sys.argv[2]
+	data_id_path = sys.argv[3]
 	out_dir = model_dir
 
 	model_json_path = os.path.join(model_dir, 'model.json')
@@ -69,7 +70,7 @@ if __name__ == '__main__':
 	f.close()
 
 	# prepare utilities
-	util = DataSetUtility()
+	util = DataSetUtility(os.path.abspath(data_id_path))
 
 	# union of queries => x_data
 	x_data = {}
@@ -87,7 +88,7 @@ if __name__ == '__main__':
 	# apply the classifier
 	id_path = os.path.join(out_dir, 'pool.id')
 	svm_path = os.path.join(out_dir, 'pool.svm')
-	util.prepare_svm_predict_data(x_data, id_path, svm_path)
+	util.prepare_svm_test_data(x_data, id_path, svm_path)
 
 	model_path = m['classifier']
 	pred_path = os.path.join(out_dir, 'pool.prd')

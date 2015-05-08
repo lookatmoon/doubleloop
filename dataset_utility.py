@@ -14,7 +14,7 @@ def compute_rprec(y_arr, s_arr):
 			return float(r) / float(i + 1)
 
 class DataSetUtility(object):
-	def __init__(self):
+	def __init__(self, id_set_path):
 		# x-data
 		self.raw_dir = '/storage6/foreseer/users/raywang/large_learn_data/rcv1-v2/text/processed'
 		self.search_cmd = ['java', '-jar', '/storage6/foreseer/users/raywang/pool/index/rcv/search.jar']
@@ -32,8 +32,9 @@ class DataSetUtility(object):
 		# task specific
 		self.positive_labels = {'G151':1}
 		self.work_dir = '/storage6/foreseer/users/raywang/pool/dl/dat/G151'
-		self.x_seed_path = '/storage6/foreseer/users/raywang/pool/dl/dat/G151/x_seed.txt'
-		self.id_set_path = '/storage6/foreseer/users/raywang/pool/dl/dat/G151/train.id'
+		self.x_seed_path = '/storage6/foreseer/users/raywang/pool/dl/dat/x_seed.txt'
+		self.id_set_path = id_set_path
+		# self.id_set_path = '/storage6/foreseer/users/raywang/pool/dl/dat/G151/train.id'
 		# self.id_set_path = '/storage6/foreseer/users/raywang/pool/dl/dat/G151/test.id'
 
 		# load term map: id should be integers starting from 1
@@ -189,7 +190,7 @@ class DataSetUtility(object):
 	# input: y_data['doc_id'] = label
 	#		 datapath: train_path
 	# output: line format = 'label' 'data_str'
-	def prepare_svm_predict_data(self, x_data, id_path, svm_path):
+	def prepare_svm_test_data(self, x_data, id_path, svm_path):
 		id_f = open(id_path, 'w')
 		svm_f = open(svm_path, 'w')
 		for doc_id, v in x_data.items():
@@ -204,7 +205,7 @@ class DataSetUtility(object):
 	# input: y_data['doc_id'] = label
 	#		 datapath: train_path
 	# output: line format = 'label' 'data_str'
-	def prepare_svm_data(self, y_data, output_path):
+	def prepare_svm_train_data(self, y_data, output_path):
 		in_f = open(self.train_data_path)
 		ou_f = open(output_path, 'w')
 		for line in in_f:

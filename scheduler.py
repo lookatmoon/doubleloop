@@ -1,3 +1,9 @@
+import sys
+
+if len(sys.argv) != 2:
+	exit ('Params: id_set_path')
+id_set_path = sys.argv[1]
+
 from dataset_utility import DataSetUtility
 from pool import Pool
 
@@ -11,7 +17,7 @@ from y_learner import YLearner
 
 from transition import *
 
-util = DataSetUtility()
+util = DataSetUtility(id_set_path)
 pool = Pool(util)
 
 # X's

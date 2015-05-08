@@ -18,7 +18,7 @@ class XOracle(object):
 		for qid in x_queries:
 			x_query_vec = x_queries[qid]
 			query_str = self.dataset_util.parse_sparse_vec_to_query_str(x_query_vec)
-			params = {'max':500, 'query': query_str}
+			params = {'max':1000, 'query': query_str}
 			dat = self.dataset_util.search_index(params)
 			dat = self.dataset_util.restrict_id(dat) # excluding data in eval
 			vec = self.dataset_util.parse_data_to_sparse_vec(dat)

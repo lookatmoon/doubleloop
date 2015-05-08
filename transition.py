@@ -2,7 +2,7 @@ import sys
 import random
 import os.path
 import json
-import liblinearutil as linsvm
+from scipy.stats import spearmanr
 
 STATE_X_QUERY  = 'STATE_X_QUERY'
 STATE_X_UPDATE = 'STATE_X_UPDATE'
@@ -64,25 +64,29 @@ class Transition(object):
 			return self.record_state(STATE_Y_UPDATE)
 
 		elif current_step == STATE_Y_UPDATE:
-			if self.y_learner.is_stable():
+			if self.y_stable():
 				return self.record_state(STATE_X_QUERY)
 			else:
 				return self.record_state(STATE_Y_QUERY)
 
 		elif current_step == STATE_X_UPDATE:
-			
-			# if not self.y_learner.has_new_predicted_pos_data():
-			# # if not self.y_learner.has_new_labeled_pos_data():
-			# 	return self.record_state(STATE_DONE)
-			# else:
-			# 	return self.record_state(STATE_Y_UPDATE)
 
-			return self.record_state(STATE_Y_UPDATE)
+			if not self.y_learner.has_new_predicted_pos_data():
+			# if not self.y_learner.has_new_labeled_pos_data():
+				return self.record_state(STATE_DONE)
+			else:
+				return self.record_state(STATE_Y_UPDATE)
 
-	def save_model(self):
+			# return self.record_state(STATE_Y_UPDATE)
+
+	def get_model_dir(self):
 		model_dir = os.path.join(self.pool.dataset_util.work_dir, 'model_{}_{}'.format(self.x_querier.xqid, self.y_querier.yqid))
 		if not os.path.exists(model_dir):
 			os.makedirs(model_dir)
+		return model_dir
+
+	def save_model(self):
+		model_dir = self.get_model_dir()
 
 		# prepare model content
 		m = {}
@@ -90,13 +94,11 @@ class Transition(object):
 		for h in self.x_querier.hist:
 			q_str = self.pool.dataset_util.parse_sparse_vec_to_query_str(h[2])
 			p = {'q': q_str}
-			p['r'] = 500
+			p['r'] = 1000
 			m['query_arr'].append(p)
 		
-		if self.y_learner.model != None:
-			model_path = os.path.join(model_dir, 'model')
-			linsvm.save_model(model_path, self.y_learner.model)
-			m['classifier'] = os.path.abspath(model_path)
+		if self.y_learner.current_model_path != None:
+			m['classifier'] = os.path.abspath(self.y_learner.current_model_path)
 		else:
 			m['classifier'] = 'NULL'
 
@@ -110,7 +112,30 @@ class Transition(object):
 		json.dump(m, f, sort_keys=True, indent=2)
 		f.close()
 
+	def y_stable(self):
+		n_y_last_pred = len(self.y_learner.y_last_pred)
+		n_y_pred = len(self.pool.y_pred)
+		if n_y_last_pred != n_y_pred:
+			return False
+		y_last_pred_score = []
+		y_pred_score = []
+		for doc_id in self.pool.y_pred:
+			y_last_pred_score.append(self.y_learner.y_last_pred[doc_id])
+			y_pred_score.append(self.pool.y_pred[doc_id])
+		r, p = spearmanr(y_last_pred_score, y_pred_score)
+		# sys.stderr.write('YLearner, is_stable(): y_last_pred_score = {}\n'.format(self.y_last_pred))
+		# sys.stderr.write('YLearner, is_stable(): y_pred_score = {}\n'.format(self.pool.y_pred))
+		sys.stderr.write('Transition, y_stable(): spearmanr = {}\n'.format(r))
+		if r > 0.85:
+			return True
+		else:
+			return False
 
+	def x_stable(self):
+		if self.pool.x_new == 0:
+			return True
+		else:
+			return False
 
 
 

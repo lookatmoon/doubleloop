@@ -25,16 +25,16 @@ class YQuerier(object):
 
 		score_dict = {}
 		for doc_id in self.pool.x_data:
-			if (doc_id not in self.pool.y_data) and (doc_id in self.pool.y_pred) and (doc_id in self.pool.dataset_util.id_set):
+			if (doc_id not in self.pool.y_data) and (doc_id in self.pool.y_pred):
 				# sys.stderr.write('YQuerier, ask_margin(): doc_id in y_pred\n')
-				score_dict[doc_id] = abs(self.pool.y_pred[doc_id])
+				score_dict[doc_id] = abs(self.pool.y_pred[doc_id] - 0.5)
 		score_sorted = sorted(score_dict.items(), key = operator.itemgetter(1))
 		
 		for i in range(min( k_select, len(score_sorted) )):
 			doc_id = score_sorted[i][0]
 			y_queries[self.yqid][doc_id] = None
 			self.hist.append( (datetime.now(), self.yqid, doc_id) )
-			sys.stderr.write('YQuerier, ask_margin(): y_query = {}\n'.format(doc_id))
+			sys.stderr.write('YQuerier, ask_margin(): y_query = {}, margin = {}\n'.format(doc_id, score_sorted[i][1]))
 
 		return y_queries
 
